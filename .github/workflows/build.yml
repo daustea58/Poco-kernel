@@ -19,15 +19,29 @@ jobs:
         build-essential \
         gcc-aarch64-linux-gnu \
         libssl-dev \
-        libelf-dev
+        libelf-dev \
+        git \
+        ccache
 
 
-    - name: Clone Xiaomi Kernel
+    - name: Clone Xiaomi Kernel Source
       run: |
         git clone \
         -b surya-q-oss \
         --depth=1 \
         https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git kernel
+
+
+    - name: Prepare Kernel
+      run: |
+        cd kernel
+
+        export ARCH=arm64
+        export CROSS_COMPILE=aarch64-linux-gnu-
+
+        mkdir -p out
+
+        make O=out vendor/surya_defconfig
 
 
     - name: Build Kernel
@@ -37,13 +51,19 @@ jobs:
         export ARCH=arm64
         export CROSS_COMPILE=aarch64-linux-gnu-
 
-        make O=out surya_defconfig
-
         make O=out -j$(nproc)
+
+
+    - name: Check Output
+      run: |
+        ls -lah kernel/out/arch/arm64/boot/
 
 
     - name: Upload Kernel
       uses: actions/upload-artifact@v4
       with:
+
         name: PocoX3-Kernel
-        path: kernel/out/arch/arm64/boot/Image.gz-dtb
+
+        path: |
+          kernel/out/arch/arm64/boot/Image.gz-dtb
