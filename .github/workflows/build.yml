@@ -1,0 +1,49 @@
+name: Build Poco X3 NFC Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y \
+        bc \
+        bison \
+        flex \
+        build-essential \
+        gcc-aarch64-linux-gnu \
+        libssl-dev \
+        libelf-dev
+
+
+    - name: Clone Xiaomi Kernel
+      run: |
+        git clone \
+        -b surya-q-oss \
+        --depth=1 \
+        https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git kernel
+
+
+    - name: Build Kernel
+      run: |
+        cd kernel
+
+        export ARCH=arm64
+        export CROSS_COMPILE=aarch64-linux-gnu-
+
+        make O=out surya_defconfig
+
+        make O=out -j$(nproc)
+
+
+    - name: Upload Kernel
+      uses: actions/upload-artifact@v4
+      with:
+        name: PocoX3-Kernel
+        path: kernel/out/arch/arm64/boot/Image.gz-dtb
