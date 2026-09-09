@@ -1,27 +1,19 @@
-name: Build Poco X3 NFC Kernel
+name: Check Poco X3 Kernel Config
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  check:
+
     runs-on: ubuntu-22.04
 
     steps:
 
-    - name: Install dependencies
+    - name: Install tools
       run: |
         sudo apt update
-        sudo apt install -y \
-        bc \
-        bison \
-        flex \
-        build-essential \
-        gcc-aarch64-linux-gnu \
-        libssl-dev \
-        libelf-dev \
-        git \
-        ccache
+        sudo apt install -y git
 
 
     - name: Clone Xiaomi Kernel Source
@@ -32,38 +24,30 @@ jobs:
         https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git kernel
 
 
-    - name: Prepare Kernel
+    - name: Find Defconfig
       run: |
+
         cd kernel
 
-        export ARCH=arm64
-        export CROSS_COMPILE=aarch64-linux-gnu-
+        echo "========================"
+        echo "Kernel branch:"
+        git branch
 
-        mkdir -p out
+        echo "========================"
+        echo "Search Poco X3 config"
 
-        make O=out vendor/surya_defconfig
-
-
-    - name: Build Kernel
-      run: |
-        cd kernel
-
-        export ARCH=arm64
-        export CROSS_COMPILE=aarch64-linux-gnu-
-
-        make O=out -j$(nproc)
+        find arch/arm64/configs \
+        -type f \
+        | grep -iE "surya|sm7150|defconfig" || true
 
 
-    - name: Check Output
-      run: |
-        ls -lah kernel/out/arch/arm64/boot/
+        echo "========================"
+        echo "List configs"
+
+        ls -la arch/arm64/configs
 
 
-    - name: Upload Kernel
-      uses: actions/upload-artifact@v4
-      with:
+        echo "========================"
+        echo "Vendor folder"
 
-        name: PocoX3-Kernel
-
-        path: |
-          kernel/out/arch/arm64/boot/Image.gz-dtb
+        ls -la arch/arm64/configs/vendor 2>/dev/null || echo "No vendor folder"
