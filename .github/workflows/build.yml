@@ -6,7 +6,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
 
     steps:
 
@@ -30,6 +30,16 @@ jobs:
         -b surya-q-oss \
         --depth=1 \
         https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git kernel
+
+
+    - name: Fix DTC build
+      run: |
+
+        cd kernel
+
+        sed -i \
+        '1i #include <stddef.h>' \
+        scripts/dtc/dtc-lexer.l
 
 
     - name: Configure Kernel
@@ -56,17 +66,8 @@ jobs:
         make O=out -j$(nproc)
 
 
-    - name: Check Output
-      run: |
-
-        ls -lah kernel/out/arch/arm64/boot/
-
-
     - name: Upload Kernel
       uses: actions/upload-artifact@v4
       with:
-
         name: PocoX3-Kernel
-
-        path: |
-          kernel/out/arch/arm64/boot/*
+        path: kernel/out/arch/arm64/boot/*
